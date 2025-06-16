@@ -1,0 +1,70 @@
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, Button, FlatList } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const InventoryApp = () => {
+  const [product, setProduct] = useState('');
+  const [stock, setStock] = useState([]);
+
+  useEffect(() => {
+    loadStock();
+  }, []);
+
+  const loadStock = async () => {
+    try {
+      const storedStock = await AsyncStorage.getItem('stock');
+      if (storedStock) {
+        setStock(JSON.parse(storedStock));
+      }
+    } catch (error) {
+      console.error('Erro ao carregar o estoque:', error);
+    }
+  };
+
+  const addProduct = async () => {
+    if (product.trim() === '') return;
+    const newStock = [...stock, product];
+    try {
+      await AsyncStorage.setItem('stock', JSON.stringify(newStock));
+      setStock(newStock);
+      setProduct('');
+    } catch (error) {
+      console.error('Erro ao adicionar produto:', error);
+    }
+  };
+
+  const removeProduct = async (index) => {
+    const newStock = stock.filter((_, i) => i !== index);
+    try {
+      await AsyncStorage.setItem('stock', JSON.stringify(newStock));
+      setStock(newStock);
+    } catch (error) {
+      console.error('Erro ao remover produto:', error);
+    }
+  };
+
+  return (
+    <View style={{ padding: 20 }}>
+      <Text style={{ fontSize: 24, fontWeight: 'bold' }}>Controle de Estoque</Text>
+      <TextInput
+        placeholder="Digite o nome do produto"
+        value={product}
+        onChangeText={setProduct}
+        style={{ borderBottomWidth: 1, marginBottom: 10 }}
+      />
+      <Button title="Adicionar Produto" onPress={addProduct} />
+      <FlatList
+        data={stock}
+        keyExtractor={(item, index) => index.toString()}
+        renderItem={({ item, index }) => (
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginVertical: 5 }}>
+            <Text>{item}</Text>
+            <Button title="Remover" onPress={() => removeProduct(index)} />
+          </View>
+        )}
+      />
+    </View>
+  );
+};
+
+export default InventoryApp;
